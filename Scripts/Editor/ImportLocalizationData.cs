@@ -11,8 +11,7 @@ namespace Creobit.Localization.Editor
         private Vector2 _scrollPositionLang;
 
         private readonly IEnumerable<ImportLanguage> ImportLanguages;
-
-        private readonly IEnumerable<ImportSheet> Sheets;
+        public readonly IEnumerable<LanguagesKeyValue> GlobalKeys;
 
         public IEnumerable<string> Languages
         {
@@ -37,18 +36,11 @@ namespace Creobit.Localization.Editor
             get
             {
                 var keys = new List<LanguagesKeyValue>();
-
-                foreach (var sheet in Sheets)
-                {
-                    if (sheet.IsUsed)
-                    {
-                        keys.AddRange(sheet.Groups);
-                    }
-                }
+                keys.AddRange(GlobalKeys);
 
                 var importLanguages = new List<ImportLanguage>(ImportLanguages);
 
-                for (var i = importLanguages.Count - 1; i >= 0 ; i--)
+                for (var i = importLanguages.Count - 1; i >= 0; i--)
                 {
                     var lang = importLanguages[i];
                     if (!lang.IsUsed)
@@ -64,16 +56,16 @@ namespace Creobit.Localization.Editor
             }
         }
 
-        public ImportLocalizationData(IEnumerable<ImportLanguage> languages, IEnumerable<ImportSheet> sheets)
+        public ImportLocalizationData(IEnumerable<ImportLanguage> languages, IEnumerable<LanguagesKeyValue> languagesKeys)
         {
             ImportLanguages = languages ?? throw new ArgumentNullException(nameof(languages));
-            Sheets = sheets ?? throw new ArgumentNullException(nameof(sheets));
+            GlobalKeys = languagesKeys ?? throw new ArgumentNullException(nameof(languagesKeys));
         }
+
 
         public void OnGui()
         {
-            OnGuiLanguages();
-            OnGuiSheets();
+            OnGuiLanguages();           
         }
 
         private void OnGuiLanguages()
@@ -113,41 +105,6 @@ namespace Creobit.Localization.Editor
             GUILayout.FlexibleSpace();
         }
 
-        private void OnGuiSheets()
-        {
-            GUILayout.Label("Sheets:");
-
-            EditorGUILayout.BeginVertical("box");
-            _scrollPositionSheets = EditorGUILayout.BeginScrollView(_scrollPositionSheets);
-
-            foreach (var sheet in Sheets)
-            {
-                OnGuiSheet(sheet);
-            }
-
-            EditorGUILayout.EndScrollView();
-            EditorGUILayout.EndVertical();
-        }
-
-        private void OnGuiSheet(ImportSheet sheet)
-        {
-            EditorGUILayout.BeginHorizontal();
-
-            var currentValue = sheet.IsUsed;
-            currentValue = EditorGUILayout.Toggle(currentValue, GUILayout.Width(30));
-
-            if (currentValue != sheet.IsUsed)
-            {
-                sheet.IsUsed = currentValue;
-            }
-
-            GUI.enabled = sheet.IsUsed;
-            GUILayout.Label(sheet.Id);
-            GUI.enabled = true;
-
-            EditorGUILayout.EndHorizontal();
-
-            GUILayout.FlexibleSpace();
-        }
+        
     }
 }

@@ -7,13 +7,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEditor;
 using UnityEngine;
 
 namespace Creobit.Localization.Editor
 {
     [CreateAssetMenu(fileName = "GoogleSheetImporter", menuName = "Creobit/Localization/GoogleSheetImporter")]
-    public sealed class GoogleSheetImporter : ScriptableObject
+    public class GoogleSheetImporter : ScriptableObject
     {
         #region GoogleSheetImporter
 
@@ -30,14 +29,14 @@ namespace Creobit.Localization.Editor
         private string[] _sheetNames;
 
         [SerializeField]
-        private string[] _languages;
+        private LocalizationData _localizationData;
 
         [SerializeField]
-        private LocalizationData _localizationData;
+        private static List<(string Language, string Key, string Value)> GlobalEntries = new List<(string Language, string Key, string Value)>();
 
         public async Task ImportAsync(CancellationToken cancellationToken)
         {
-            var entries = new List<(string Language, string Key, string Value)>();
+            var entries = new List<(string Language, string Key, string Value)>();          
 
             await ImportAsync();
 
@@ -73,7 +72,9 @@ namespace Creobit.Localization.Editor
                         UpdateEntries(values);
                     }
 
-                    UpdateData();
+                    GlobalEntries = entries;  
+                    Load();
+                    WindowImportProject.Open(_localizationData);
                 }
             }
 
@@ -90,50 +91,56 @@ namespace Creobit.Localization.Editor
 
                     for (var columnIndex = 1; columnIndex < values[rowIndex].Count; ++columnIndex)
                     {
-                        var language = Convert.ToString(values[0][columnIndex]).Trim();
-
-                        if (!Array.Exists(_languages, x => x == language))
-                        {
-                            continue;
-                        }
-
+                        var language = Convert.ToString(values[0][columnIndex]).Trim();    
                         var value = Convert.ToString(values[rowIndex][columnIndex]).Trim();
-
-                        entries.Add((language, key, value));
+                        entries.Add((language, key, value));          
                     }
                 }
             }
 
-            void UpdateData()
+        }
+
+        internal static ImportLocalizationData Load()
+        {
+            var result = default(ImportLocalizationData);        
+            var languages = GetLanguages();
+            var globalKeys = GetKeyValues();
+            result = new ImportLocalizationData(languages, globalKeys);        
+            return result;            
+
+            IEnumerable<ImportLanguage> GetLanguages()
             {
-                var languages = GetLanguages();
-                var keyValues = GetKeyValues();
-
-                _localizationData.SetData(languages, keyValues);
-
-                EditorUtility.SetDirty(_localizationData);
-
-                IEnumerable<string> GetLanguages()
+                var resultImportLanguage = new List<ImportLanguage>();
+                var ListLang = GetLanguagesString().ToList();
+                for (var i = 0; i < ListLang.Count(); ++i)
                 {
-                    return entries
-                        .Select(x => x.Language)
-                        .Distinct();
+                    var value = ListLang[i];
+                    var importLanguage = new ImportLanguage(value);
+                    resultImportLanguage.Add(importLanguage);
                 }
+                return resultImportLanguage;
+            }
 
-                IEnumerable<LanguagesKeyValue> GetKeyValues()
+            IEnumerable<string> GetLanguagesString()
+            {
+                return GlobalEntries
+                    .Select(x => x.Language)
+                    .Distinct();
+            }
+
+            IEnumerable<LanguagesKeyValue> GetKeyValues()
+            {
+                var groups = GlobalEntries
+                    .Select(x => (x.Key, x.Value))
+                    .GroupBy(x => x.Key);
+
+                foreach (var group in groups)
                 {
-                    var groups = entries
-                        .Select(x => (x.Key, x.Value))
-                        .GroupBy(x => x.Key);
+                    var values = group
+                        .AsEnumerable()
+                        .Select(x => x.Value);
 
-                    foreach (var group in groups)
-                    {
-                        var values = group
-                            .AsEnumerable()
-                            .Select(x => x.Value);
-
-                        yield return new LanguagesKeyValue(group.Key, values);
-                    }
+                    yield return new LanguagesKeyValue(group.Key, values);
                 }
             }
         }

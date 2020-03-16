@@ -10,15 +10,13 @@ namespace Creobit.Localization.Editor
     public sealed class GoogleSheetImporterEditor : UnityEditor.Editor
     {
         #region Editor
-
         public override async void OnInspectorGUI()
-        {
+        {            
             base.OnInspectorGUI();
-
             EditorGUILayout.Separator();
 
-            if (GUILayout.Button("Import"))
-            {
+            if (GUILayout.Button("Load"))
+            {                
                 if (_importTask == null)
                 {
                     try
@@ -73,6 +71,7 @@ namespace Creobit.Localization.Editor
         private CancellationTokenSource _cancellationTokenSource;
         private Task _importTask;
         private bool? _progressBar;
+       
 
         #endregion
     }

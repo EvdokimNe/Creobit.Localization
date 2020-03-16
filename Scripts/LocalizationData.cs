@@ -25,6 +25,7 @@ namespace Creobit.Localization
             _keys.AddRange(keys);
         }
 
+
         public string GetString(string key, string language)
         {
             var value = default(string);
