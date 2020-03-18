@@ -31,8 +31,7 @@ namespace Creobit.Localization.Editor
         [SerializeField]
         private LocalizationData _localizationData;
 
-        [SerializeField]
-        private static List<(string Language, string Key, string Value)> GlobalEntries = new List<(string Language, string Key, string Value)>();
+        private List<(string Language, string Key, string Value)> _globalEntries;
 
         public async Task ImportAsync(CancellationToken cancellationToken)
         {
@@ -42,7 +41,7 @@ namespace Creobit.Localization.Editor
 
             async Task ImportAsync()
             {
-                var clientSecrets = new ClientSecrets()
+                var clientSecrets = new ClientSecrets
                 {
                     ClientId = _clientId,
                     ClientSecret = _clientSecret
@@ -53,7 +52,7 @@ namespace Creobit.Localization.Editor
                 };
 
                 var userCredential = await GoogleWebAuthorizationBroker.AuthorizeAsync(clientSecrets, scopes, "user", cancellationToken);
-                var clientServiceInitializer = new BaseClientService.Initializer()
+                var clientServiceInitializer = new BaseClientService.Initializer
                 {
                     HttpClientInitializer = userCredential
                 };
@@ -72,9 +71,9 @@ namespace Creobit.Localization.Editor
                         UpdateEntries(values);
                     }
 
-                    GlobalEntries = entries;  
-                    Load();
-                    WindowImportProject.Open(_localizationData);
+                    _globalEntries = entries;  
+                    var importLocalizationData = Load();
+                    WindowImportProject.Open(_localizationData, importLocalizationData);
                 }
             }
 
@@ -100,21 +99,19 @@ namespace Creobit.Localization.Editor
 
         }
 
-        internal static ImportLocalizationData Load()
-        {
-            var result = default(ImportLocalizationData);        
+        private ImportLocalizationData Load()
+        {       
             var languages = GetLanguages();
             var globalKeys = GetKeyValues();
-            result = new ImportLocalizationData(languages, globalKeys);        
-            return result;            
+            return new ImportLocalizationData(languages, globalKeys);            
 
             IEnumerable<ImportLanguage> GetLanguages()
             {
                 var resultImportLanguage = new List<ImportLanguage>();
-                var ListLang = GetLanguagesString().ToList();
-                for (var i = 0; i < ListLang.Count(); ++i)
+                var listLang = GetLanguagesString().ToList();
+                for (var i = 0; i < listLang.Count(); ++i)
                 {
-                    var value = ListLang[i];
+                    var value = listLang[i];
                     var importLanguage = new ImportLanguage(value);
                     resultImportLanguage.Add(importLanguage);
                 }
@@ -123,14 +120,14 @@ namespace Creobit.Localization.Editor
 
             IEnumerable<string> GetLanguagesString()
             {
-                return GlobalEntries
+                return _globalEntries
                     .Select(x => x.Language)
                     .Distinct();
             }
 
             IEnumerable<LanguagesKeyValue> GetKeyValues()
             {
-                var groups = GlobalEntries
+                var groups = _globalEntries
                     .Select(x => (x.Key, x.Value))
                     .GroupBy(x => x.Key);
 

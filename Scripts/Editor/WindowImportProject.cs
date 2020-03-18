@@ -10,21 +10,17 @@ namespace Creobit.Localization.Editor
     public class WindowImportProject : EditorWindow
     {
         private ILocalizationData _data;      
-        public ImportLocalizationData _importData;
+        private ImportLocalizationData _importData;
         
 
-        internal static void Open(ILocalizationData targetObj)
+        internal static void Open(ILocalizationData targetObj, ImportLocalizationData importLocalizationData)
         {
             var target = targetObj ?? throw new ArgumentNullException(nameof(targetObj));
             var window = GetWindow(typeof(WindowImportProject)) as WindowImportProject;
             window.titleContent = new GUIContent("ImportLanguage");
-            window._data = target;
             
-        }
-
-        private void OnEnable()
-        {
-            _importData = GoogleSheetImporter.Load();
+            window._data = target;
+            window._importData = importLocalizationData;
         }
 
         private void OnGUI()
